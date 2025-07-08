@@ -1,0 +1,23 @@
+npx commitlint --edit "$1"
+
+# File path to the commit message
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# Skip merge and squash commits
+if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "squash" ]; then
+  exit 0
+fi
+
+# Get current branch name
+BRANCH_NAME=$(git symbolic-ref --short HEAD)
+
+# Match pattern like: fix/1234-something or feature/5678-title
+if echo "$BRANCH_NAME" | grep -Eq '^(fix|feature)/[0-9]+-'; then
+  TICKET_ID=$(echo "$BRANCH_NAME" | sed -E 's/^(fix|feature)\/([0-9]+)-.*/\2/')
+
+  # Only add if it's not already in the message
+  if ! grep -q "Ref: #$TICKET_ID" "$COMMIT_MSG_FILE"; then
+    printf "\nRef: #%s\n" "$TICKET_ID" >> "$COMMIT_MSG_FILE"
+  fi
+fi
